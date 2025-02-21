@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lottie 动画预览</title>
+    <script src="./scripts/lottie.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4299e1;
+            --primary-hover: #3182ce;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #lottie {
+            width: 400px;
+            height: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin: 0 auto 20px;
+        }
+
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .link {
+            display: inline-block;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .link:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="lottie"></div>
+    <div class="controls">
+        <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileUpload(event)">
+        <button onclick="document.getElementById('fileInput').click()" class="btn">上传动画</button>
+        <button onclick="togglePlay()" class="btn">播放/暂停</button>
+        <button onclick="window.close()" class="btn">关闭预览</button>
+    </div>
+    <a href="/index.html" class="link">返回压缩</a>
+
+    <script>
+        let animation = null;
+        let isPlaying = true;
+
+        function loadAnimation(jsonData) {
+            if (animation) {
+                animation.destroy();
+            }
+            animation = lottie.loadAnimation({
+                container: document.getElementById('lottie'),
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                animationData: jsonData
+            });
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        loadAnimation(jsonData);
+                    } catch (error) {
+                        alert('无效的 JSON 文件');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function togglePlay() {
+            if (!animation) return;
+            if (isPlaying) {
+                animation.pause();
+            } else {
+                animation.play();
+            }
+            isPlaying = !isPlaying;
+        }
+    </script>
+</body>
+</html>

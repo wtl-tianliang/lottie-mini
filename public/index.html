@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lottie JSON Compressor</title>
+    <script src="./scripts/lottie.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --primary-color: #4299e1;
+            --primary-hover: #3182ce;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: var(--bg-gradient);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: calc(100vh - 40px);
+        }
+
+        .panel {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            max-height: 100%;
+            overflow-y: auto;
+        }
+
+        .preview-container {
+            flex: 1;
+            min-height: 400px;
+            background: #f7fafc;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem 0 0 0;
+        }
+
+        #lottie {
+            background: #f7fafc;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        #uploadForm {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          overflow: hidden;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+
+        #lottie {
+            flex: 1;
+            background: #f7fafc;
+            border-radius: 8px;
+            overflow: hidden; 
+            position: relative; 
+            margin-top: 2rem;
+        }
+
+        #lottie > svg {
+            position: absolute; /* 添加此块 */
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+        }
+        h2 {
+            color: #2d3748;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .file-input-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .file-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input:hover {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .file-size {
+            text-align: center;
+            color: #4a5568;
+            font-size: 0.875rem;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: #f7fafc;
+            border-radius: 4px;
+        }
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+
+        #progress {
+            display: none;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="panel left-panel">
+            <h2>Lottie JSON 压缩工具</h2>
+            <form id="uploadForm">
+                <div class="file-input-container">
+                    <input type="file" name="file" accept=".json" class="file-input" required>
+                </div>
+                <div class="preview-container" id="originalPreview"></div>
+                <div class="file-size" id="originalSize"></div>
+                <div id="progress">
+                    <div style="width: 100%; height: 4px; background: #e2e8f0; border-radius: 2px;">
+                        <div id="progressBar" style="width: 0%; height: 100%; background: var(--primary-color); border-radius: 2px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div id="progressText" style="text-align: center; color: #4a5568; font-size: 0.875rem;">0%</div>
+                </div>
+                <button type="submit" class="btn" id="submitBtn" style="width: 100%;">压缩文件</button>
+            </form>
+        </div>
+        <div class="panel right-panel">
+            <h2>压缩后动画预览</h2>
+            <div id="lottie"></div>
+            <div class="file-size" id="compressedSize"></div>
+            <div class="preview-controls">
+                <button onclick="togglePlay()" class="btn" id="playBtn">播放/暂停</button>
+                <button onclick="downloadJSON()" class="btn" id="downloadBtn" disabled>下载压缩后的文件</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let animation = null;
+        let isPlaying = true;
+        let compressedData = null;
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        let originalAnimation = null;
+        document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('originalSize').textContent = `原始大小: ${formatFileSize(file.size)}`;
+                    
+                    // 预览原始动画
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const jsonData = JSON.parse(e.target.result);
+                            if (originalAnimation) {
+                                originalAnimation.destroy();
+                            }
+                            originalAnimation = lottie.loadAnimation({
+                                container: document.getElementById('originalPreview'),
+                                renderer: 'svg',
+                                loop: true,
+                                autoplay: true,
+                                animationData: jsonData
+                            });
+                        } catch (error) {
+                            alert('无效的 JSON 文件');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        function loadAnimation(jsonData) {
+            if (animation) {
+                animation.destroy();
+            }
+            animation = lottie.loadAnimation({
+                container: document.getElementById('lottie'),
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                animationData: jsonData
+            });
+        }
+
+        function togglePlay() {
+            if (!animation) return;
+            if (isPlaying) {
+                animation.pause();
+            } else {
+                animation.play();
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function downloadJSON() {
+            if (!compressedData) return;
+            
+            const blob = new Blob([JSON.stringify(compressedData)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'compressed.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const fileInput = this.querySelector('input[type="file"]');
+            const submitBtn = document.getElementById('submitBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            if (!fileInput.files[0]) {
+                alert('请选择文件');
+                return;
+            }
+            
+            formData.append('file', fileInput.files[0]);
+            submitBtn.disabled = true;
+            downloadBtn.disabled = true;
+            progress.style.display = 'block';
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/compress', true);
+            
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressText.textContent = percentComplete + '%';
+                }
+            };
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    compressedData = response.data;
+                    loadAnimation(compressedData);
+                    downloadBtn.disabled = false;
+                    
+                    // 计算压缩后的大小
+                    const compressedSize = new Blob([JSON.stringify(compressedData)]).size;
+                    const originalSize = fileInput.files[0].size;
+                    const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+                    
+                    document.getElementById('compressedSize').textContent = 
+                        `压缩后大小: ${formatFileSize(compressedSize)} (减小 ${ratio}%)`;
+                } else {
+                    alert('压缩失败：' + xhr.statusText);
+                }
+                submitBtn.disabled = false;
+                progress.style.display = 'none';
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+            };
+            
+            xhr.onerror = function() {
+                alert('上传失败，请重试');
+                submitBtn.disabled = false;
+                downloadBtn.disabled = true;
+                progress.style.display = 'none';
+            };
+            
+            xhr.send(formData);
+        });
+    </script>
+</body>
+</html>
