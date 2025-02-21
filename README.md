@@ -56,3 +56,45 @@ lottie server
 - Sharp (图片压缩处理)
 - Multer (文件上传处理)
 - Lottie Web (动画渲染)
+
+## Docker 部署
+
+### 构建镜像
+
+```bash
+docker build -t lottie-mini .
+```
+
+### 运行容器
+
+```bash
+docker run -d -p 3000:3000 --name lottie-mini lottie-mini
+```
+
+访问 http://localhost:3000 即可使用 Web 界面。
+
+### 停止容器
+
+```bash
+docker stop lottie-mini
+```
+
+### 删除容器
+
+```bash
+docker rm lottie-mini
+```
+
+## 使用说明：
+
+1. 构建 Docker 镜像：
+
+```bash
+docker build -t lottie-mini .
+```
+
+2. 运行 Docker 容器：
+
+```bash
+docker run -d -p 3000:3000 --name lottie-mini lottie-mini
+```
