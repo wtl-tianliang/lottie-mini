@@ -84,17 +84,3 @@ docker stop lottie-mini
 ```bash
 docker rm lottie-mini
 ```
-
-## 使用说明：
-
-1. 构建 Docker 镜像：
-
-```bash
-docker build -t lottie-mini .
-```
-
-2. 运行 Docker 容器：
-
-```bash
-docker run -d -p 3000:3000 --name lottie-mini lottie-mini
-```

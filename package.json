@@ -1,6 +1,6 @@
 {
   "name": "lottie-mini",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Squish those Lottie files",
   "main": "index.js",
   "dependencies": {
