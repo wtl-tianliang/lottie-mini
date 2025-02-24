@@ -288,7 +288,7 @@
             progress.style.display = 'block';
             
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/compress', true);
+            xhr.open('POST', '/lottie-mini/compress', true);
             
             xhr.upload.onprogress = function(e) {
                 if (e.lengthComputable) {

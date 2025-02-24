@@ -35,16 +35,17 @@ program
   .description("Start a compression server from port 3000")
   .action(async () => {
     const app = express();
-
+    const router = express.Router();
+    
     // 确保上传目录存在
     if (!fs.existsSync("uploads")) {
       fs.mkdirSync("uploads");
     }
 
-    // 设置静态文件目录
-    app.use(express.static(path.join(__dirname, "../public")));
-
-    app.post("/compress", upload.single("file"), async (req, res) => {
+    // 在路由中设置所有的路径
+    router.use(express.static(path.join(__dirname, "../public")));
+    
+    router.post("/compress", upload.single("file"), async (req, res) => {
       try {
         const file = req.file;
 
@@ -84,6 +85,9 @@ program
 
         // 删除临时目录
         fs.rmdirSync(tempDir, { recursive: true });
+
+        // 删除上传的文件
+        fs.unlinkSync(file.path);
       } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Compression failed" });
@@ -91,8 +95,17 @@ program
     });
 
     // 重定向根路径到index.html
-    app.get("/", (req, res) => {
+    router.get("/", (req, res) => {
       res.sendFile(path.join(__dirname, "../public/index.html"));
+    });
+
+    // 将路由挂载到基础路径
+    app.use('/lottie-mini', router);
+
+    // 根路径重定向，并携带参数
+    app.get("/", (req, res) => {
+      // 重定向到/lottie-mini路径
+      res.redirect('/lottie-mini');
     });
 
     // 查找可用端口并启动服务器
