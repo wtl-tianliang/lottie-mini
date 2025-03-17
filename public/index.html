@@ -252,6 +252,7 @@
                 }
             });
         function loadAnimation(jsonData) {
+            jsonData = JSON.parse(JSON.stringify(jsonData));
             if (animation) {
                 animation.destroy();
             }
